@@ -2,7 +2,7 @@
 """
 Created on Mon Mar  6 17:19:33 2017
 
-@author: Shuxin Xu
+@author: Shuxin Xu, Kunming Wu
 """
 
 import pandas as pd
