@@ -14,27 +14,25 @@ import matplotlib.pyplot as plt
 #==============================================================================
 # plot reference portfolio component price time series
 # remove 'NCREIF', because it has only quarterly data
-sheet_name=['MSCI ACWI','Barclays US Agg','HFRI FOF','ML US HY Cash Pay','Barclays TIP US Index','JPM EMBI']
-for sheet in sheet_name:
-    data=pd.read_excel('./data/factor_timing_project_data_cleaned.xlsx',sheetname=sheet)
-    data=data.iloc[:,0:2]
-    data['Date']=pd.to_datetime(data['Date'],infer_datetime_format=True)
-    fig=plt.figure()
-    plt.plot(data['Date'],data['Last_Price'])
-    plt.legend([sheet])
+def plot_data_1():
+    sheet_name=['MSCI ACWI','Barclays US Agg','HFRI FOF','ML US HY Cash Pay','Barclays TIP US Index','JPM EMBI']
+    for sheet in sheet_name:
+        data=pd.read_excel('./data/factor_timing_project_data_cleaned.xlsx',sheetname=sheet)
+        data=data.iloc[:,0:2]
+        data['Date']=pd.to_datetime(data['Date'],infer_datetime_format=True)
+        plt.plot(data['Date'],data['Last_Price'])
+        plt.legend([sheet])
 
-    
-# plot PE return        
-sheet_name=['PE']
-for sheet in sheet_name:
-    data=pd.read_excel('./data/factor_timing_project_data_cleaned.xlsx',sheetname=sheet)
-    data=data.iloc[:,0:3]
-    data['EndDate']=pd.to_datetime(data['EndDate'],infer_datetime_format=True)
-    fig=plt.figure()
-    plt.plot(data['EndDate'],data['Monthly_Return'])
-    plt.legend([sheet])
+def plot_data_2():
+    # plot PE return        
+    sheet_name=['PE']
+    for sheet in sheet_name:
+        data=pd.read_excel('./data/factor_timing_project_data_cleaned.xlsx',sheetname=sheet)
+        data=data.iloc[:,0:3]
+        data['EndDate']=pd.to_datetime(data['EndDate'],infer_datetime_format=True)
+        plt.plot(data['EndDate'],data['Monthly_Return'])
+        plt.legend([sheet])
 
-    
 #==============================================================================
 # COMBINE DATAFRAME
 #==============================================================================
@@ -52,24 +50,28 @@ def to_monthly_return(df):
     ret.index = ret.index.map(lambda x:x.strftime('%Y-%m'))
     return ret[1:]
 
-df_arr = []
-for sheet in sheet_name:
-    df = pd.read_excel('./data/factor_timing_project_data_cleaned.xlsx', sheetname = sheet)
-    df_arr.append(to_monthly_return(df))
-combined_df = pd.DataFrame(df_arr).T
-combined_df.columns = sheet_name
-
-# special treatment for PE
-PE_data = pd.read_excel('./data/factor_timing_project_data_cleaned.xlsx', sheetname = 'PE')
-PE_data['EndDate'] = pd.to_datetime(PE_data['EndDate'])
-PE_data.index = PE_data['EndDate']
-PE_data = PE_data['Monthly_Return']
-PE_data.index = PE_data.index.map(lambda x:x.strftime('%Y-%m'))
-combined_df['PE'] = PE_data
-
-valid_rows = [True] * len(combined_df)
-for i,col in enumerate(combined_df.columns):
-    valid_rows &= ~np.isnan(combined_df[col])
-valid_rows
-
-combined_df = combined_df.ix[valid_rows]
+def get_all_data():
+    sheet_name=['MSCI ACWI','Barclays US Agg','HFRI FOF','ML US HY Cash Pay','Barclays TIP US Index','JPM EMBI']
+    
+    df_arr = []
+    for sheet in sheet_name:
+        df = pd.read_excel('./data/factor_timing_project_data_cleaned.xlsx', sheetname = sheet)
+        df_arr.append(to_monthly_return(df))
+    combined_df = pd.DataFrame(df_arr).T
+    combined_df.columns = sheet_name
+    
+    # special treatment for PE
+    PE_data = pd.read_excel('./data/factor_timing_project_data_cleaned.xlsx', sheetname = 'PE')
+    PE_data['EndDate'] = pd.to_datetime(PE_data['EndDate'])
+    PE_data.index = PE_data['EndDate']
+    PE_data = PE_data['Monthly_Return']
+    PE_data.index = PE_data.index.map(lambda x:x.strftime('%Y-%m'))
+    combined_df['PE'] = PE_data
+    
+    valid_rows = [True] * len(combined_df)
+    for i,col in enumerate(combined_df.columns):
+        valid_rows &= ~np.isnan(combined_df[col])
+    valid_rows
+    
+    combined_df = combined_df.ix[valid_rows]
+    return combined_df
