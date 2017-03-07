@@ -9,8 +9,11 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-##plot reference portfolio component price time series
-## remove 'NCREIF', because it has only quarterly data
+#==============================================================================
+# PLOTING
+#==============================================================================
+# plot reference portfolio component price time series
+# remove 'NCREIF', because it has only quarterly data
 sheet_name=['MSCI ACWI','Barclays US Agg','HFRI FOF','ML US HY Cash Pay','Barclays TIP US Index','JPM EMBI']
 for sheet in sheet_name:
     data=pd.read_excel('./data/factor_timing_project_data_cleaned.xlsx',sheetname=sheet)
@@ -21,7 +24,7 @@ for sheet in sheet_name:
     plt.legend([sheet])
 
     
-##plot PE return        
+# plot PE return        
 sheet_name=['PE']
 for sheet in sheet_name:
     data=pd.read_excel('./data/factor_timing_project_data_cleaned.xlsx',sheetname=sheet)
@@ -32,11 +35,18 @@ for sheet in sheet_name:
     plt.legend([sheet])
 
 
+    
+    
+    
+#==============================================================================
+# COMBINE DATAFRAME
+#==============================================================================
 def to_monthly_return(df):
     # make sure the order is correct, the first row should be the latest data
     if df['Date'][0] < df['Date'][1]:
         df = df[::-1]
     df.index = pd.to_datetime(df['Date'])
+    print(df.groupby([lambda x: x.year, lambda x: x.month]).first())
     df = df.groupby([lambda x: x.year, lambda x: x.month]).first()
     # reset index to include only the last day of month
     # use month end data here
@@ -54,10 +64,13 @@ for sheet in sheet_name:
 combined_df = pd.DataFrame(df_arr).T
 combined_df.columns = sheet_name
 
+#special treatment for PE
+PE_data = pd.read_excel('./data/factor_timing_project_data_cleaned.xlsx', sheetname = 'PE')
+
+
 valid_rows = [True] * len(combined_df)
 for i,col in enumerate(combined_df.columns):
     valid_rows &= ~np.isnan(combined_df[col])
 valid_rows
 
-combined_df.ix[valid_rows]
-    
+combined_df = combined_df.ix[valid_rows]
