@@ -20,6 +20,37 @@ data = DC.get_all_data()
 #data.drop(['PE'], axis=1, inplace=True)
 col = data.columns
 
+def buy_and_hold(weights):
+    weights = weights * 1/np.sum(weights)    
+    portfolio = 1 * weights # initial dollar value 
+    p_sum = []
+    for i in range(len(data)):
+        portfolio = np.multiply(portfolio, 1 + data.ix[i]) # monthly return
+        portfolio = np.multiply(portfolio, 1 - holding_costs) # holding costs    
+        p_sum.append(np.sum(portfolio))
+    p_ret = (pd.Series(p_sum).diff()/pd.Series(p_sum).shift(1))[1:]
+        
+    plt.plot(pd.to_datetime(data.index), p_sum, label='Portfolio Value')
+    plt.plot(pd.to_datetime(data.index)[1:], p_ret, label='Monthly Return')
+    plt.legend(loc='best')
+
+def monthly_rebalance(weights):
+    weights = weights * 1/np.sum(weights)
+    portfolio = 1 * weights # initial dollar value 
+    p_sum = []
+    for i in range(len(data)):
+        portfolio = np.multiply(portfolio, 1 + data.ix[i]) # monthly return
+        portfolio = np.multiply(portfolio, 1 - holding_costs) # holding costs
+        diff = np.abs(portfolio, weights * np.sum(portfolio))
+        portfolio = weights * np.sum(portfolio)
+        portfolio -= np.multiply(diff, trading_costs)
+        p_sum.append(np.sum(portfolio))
+    p_ret = (pd.Series(p_sum).diff()/pd.Series(p_sum).shift(1))[1:]
+        
+    plt.plot(pd.to_datetime(data.index), p_sum, label='Portfolio Value')
+    plt.plot(pd.to_datetime(data.index)[1:], p_ret, label='Monthly Return')
+    plt.legend(loc='best')
+    
 #==============================================================================
 # TRADING/HOLDING COSTS
 #==============================================================================
@@ -33,53 +64,34 @@ holding_costs = np.array([0.0010, 0.0005, 0.000, 0.0015, 0.0000, 0.0025, 0.0000]
 # EQUAL WEIGHTS PORTFOLIO (BUY AND HOLD)
 #==============================================================================
 
-
-
-
-                         
-#==============================================================================
-# REFERENCE PORTFOLIO (BUY AND HOLD)
-#==============================================================================
-
-# weights of each corresponding column
-weights = np.array([0.5, 0.13, 0.1, 0.025, 0.02, 0.025, 0.1])
-# rescaling the weights so that sum is 1, because 
-# Aggregate Real Assets and NCREIF are missing
-weights = weights * 1/np.sum(weights)
-
-portfolio = 1 * weights # initial dollar value 
-p_sum = []
-for i in range(len(data)):
-    portfolio = np.multiply(portfolio, 1 + data.ix[i]) # monthly return
-    portfolio = np.multiply(portfolio, 1 - holding_costs) # holding costs    
-    p_sum.append(np.sum(portfolio))
-p_ret = (pd.Series(p_sum).diff()/pd.Series(p_sum).shift(1))[1:]
-    
-plt.plot(pd.to_datetime(data.index), p_sum, label='Portfolio Value: RP (BUY AND HOLD)')
-#plt.plot(pd.to_datetime(data.index)[1:], p_ret)
-plt.legend(loc='best')
+buy_and_hold(np.array([1/7]*7))
 
 #==============================================================================
-# REFERENCE PORTFOLIO (REBALANCING EVERY MONTH)
+# EQUAL WEIGHTS PORTFOLIO (MONTHLY_REBALANCE)
 #==============================================================================
 
-# weights of each corresponding column
-weights = np.array([0.5, 0.13, 0.1, 0.025, 0.02, 0.025, 0.1])
-# rescaling the weights so that sum is 1, because 
-# Aggregate Real Assets and NCREIF are missing
-weights = weights * 1/np.sum(weights)
+monthly_rebalance(np.array([1/7]*7))
 
-portfolio = 1 * weights # initial dollar value 
-p_sum = []
-for i in range(len(data)):
-    portfolio = np.multiply(portfolio, 1 + data.ix[i]) # monthly return
-    portfolio = np.multiply(portfolio, 1 - holding_costs) # holding costs    
-    diff = np.abs(portfolio, weights * np.sum(portfolio))
-    portfolio = weights * np.sum(portfolio)
-    portfolio -= np.multiply(diff, trading_costs)
-    p_sum.append(np.sum(portfolio))
-p_ret = (pd.Series(p_sum).diff()/pd.Series(p_sum).shift(1))[1:]
+#==============================================================================
+# UCRP (BUY AND HOLD)
+#==============================================================================
 
-plt.plot(pd.to_datetime(data.index), p_sum, label='Portfolio Value: RP (REBALANCING)')
-#plt.plot(pd.to_datetime(data.index)[1:], p_ret)
-plt.legend(loc='best')
+buy_and_hold(np.array([0.5, 0.13, 0.1, 0.025, 0.02, 0.025, 0.1]))
+
+#==============================================================================
+# UCRP (MONTHLY_REBALANCE)
+#==============================================================================
+
+monthly_rebalance(np.array([0.5, 0.13, 0.1, 0.025, 0.02, 0.025, 0.1]))
+
+#==============================================================================
+# 60/40 (BUY AND HOLD)
+#==============================================================================
+
+buy_and_hold(np.array([0.6, 0.4, 0, 0, 0, 0, 0]))
+
+#==============================================================================
+# 60/40 (MONTHLY_REBALANCE)
+#==============================================================================
+
+monthly_rebalance(np.array([0.6, 0.4, 0, 0, 0, 0, 0]))
