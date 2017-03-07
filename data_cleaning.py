@@ -10,7 +10,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 ##plot reference portfolio component price time series
-sheet_name=['MSCI ACWI','Barclays US Agg','HFRI FOF','ML US HY Cash Pay','Barclays TIP US Index','JPM EMBI','NCREIF']
+## remove 'NCREIF', because it has only quarterly data
+sheet_name=['MSCI ACWI','Barclays US Agg','HFRI FOF','ML US HY Cash Pay','Barclays TIP US Index','JPM EMBI']
 for sheet in sheet_name:
     data=pd.read_excel('./data/factor_timing_project_data_cleaned.xlsx',sheetname=sheet)
     data=data.iloc[:,0:2]
@@ -53,6 +54,10 @@ for sheet in sheet_name:
 combined_df = pd.DataFrame(df_arr).T
 combined_df.columns = sheet_name
 
+valid_rows = [True] * len(combined_df)
 for i,col in enumerate(combined_df.columns):
-    
+    valid_rows &= ~np.isnan(combined_df[col])
+valid_rows
+
+combined_df.ix[valid_rows]
     
