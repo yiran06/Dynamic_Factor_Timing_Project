@@ -34,9 +34,6 @@ for sheet in sheet_name:
     plt.plot(data['EndDate'],data['Monthly_Return'])
     plt.legend([sheet])
 
-
-    
-    
     
 #==============================================================================
 # COMBINE DATAFRAME
@@ -46,7 +43,6 @@ def to_monthly_return(df):
     if df['Date'][0] < df['Date'][1]:
         df = df[::-1]
     df.index = pd.to_datetime(df['Date'])
-    print(df.groupby([lambda x: x.year, lambda x: x.month]).first())
     df = df.groupby([lambda x: x.year, lambda x: x.month]).first()
     # reset index to include only the last day of month
     # use month end data here
@@ -56,7 +52,6 @@ def to_monthly_return(df):
     ret.index = ret.index.map(lambda x:x.strftime('%Y-%m'))
     return ret[1:]
 
-
 df_arr = []
 for sheet in sheet_name:
     df = pd.read_excel('./data/factor_timing_project_data_cleaned.xlsx', sheetname = sheet)
@@ -64,9 +59,13 @@ for sheet in sheet_name:
 combined_df = pd.DataFrame(df_arr).T
 combined_df.columns = sheet_name
 
-#special treatment for PE
+# special treatment for PE
 PE_data = pd.read_excel('./data/factor_timing_project_data_cleaned.xlsx', sheetname = 'PE')
-
+PE_data['EndDate'] = pd.to_datetime(PE_data['EndDate'])
+PE_data.index = PE_data['EndDate']
+PE_data = PE_data['Monthly_Return']
+PE_data.index = PE_data.index.map(lambda x:x.strftime('%Y-%m'))
+combined_df['PE'] = PE_data
 
 valid_rows = [True] * len(combined_df)
 for i,col in enumerate(combined_df.columns):
