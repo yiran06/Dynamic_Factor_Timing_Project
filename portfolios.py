@@ -30,7 +30,7 @@ def buy_and_hold(weights):
     p_ret = (pd.Series(p_sum).diff()/pd.Series(p_sum).shift(1))[1:]
         
     plt.plot(pd.to_datetime(data.index), p_sum, label='Portfolio Value')
-    plt.plot(pd.to_datetime(data.index)[1:], p_ret, label='Monthly Return')
+    #plt.plot(pd.to_datetime(data.index)[1:], p_ret, label='Monthly Return')
     plt.legend(loc='best')
 
 def monthly_rebalance(weights):
@@ -46,7 +46,7 @@ def monthly_rebalance(weights):
     p_ret = (pd.Series(p_sum).diff()/pd.Series(p_sum).shift(1))[1:]
         
     plt.plot(pd.to_datetime(data.index), p_sum, label='Portfolio Value')
-    plt.plot(pd.to_datetime(data.index)[1:], p_ret, label='Monthly Return')
+    #plt.plot(pd.to_datetime(data.index)[1:], p_ret, label='Monthly Return')
     plt.legend(loc='best')
     
 #==============================================================================
@@ -58,38 +58,21 @@ def monthly_rebalance(weights):
 trading_costs = np.array([0.0010, 0.0015, 0.010, 0.0030, 0.0000, 0.0045, 0.0100])
 holding_costs = np.array([0.0010, 0.0005, 0.000, 0.0015, 0.0000, 0.0025, 0.0000])/12
 
-#==============================================================================
+                         
+# 60/40 (BUY AND HOLD)
+buy_and_hold(np.array([0.6, 0.4, 0, 0, 0, 0, 0]))
+# 60/40 (MONTHLY_REBALANCE)
+monthly_rebalance(np.array([0.6, 0.4, 0, 0, 0, 0, 0]))
+
+                         
 # EQUAL WEIGHTS PORTFOLIO (BUY AND HOLD)
-#==============================================================================
-
 buy_and_hold(np.array([1/7]*7))
-
-#==============================================================================
 # EQUAL WEIGHTS PORTFOLIO (MONTHLY_REBALANCE)
-#==============================================================================
-
 monthly_rebalance(np.array([1/7]*7))
 
-#==============================================================================
+
 # UCRP (BUY AND HOLD)
-#==============================================================================
-
 buy_and_hold(np.array([0.5, 0.13, 0.1, 0.025, 0.02, 0.025, 0.1]))
-
-#==============================================================================
 # UCRP (MONTHLY_REBALANCE)
-#==============================================================================
-
 monthly_rebalance(np.array([0.5, 0.13, 0.1, 0.025, 0.02, 0.025, 0.1]))
 
-#==============================================================================
-# 60/40 (BUY AND HOLD)
-#==============================================================================
-
-buy_and_hold(np.array([0.6, 0.4, 0, 0, 0, 0, 0]))
-
-#==============================================================================
-# 60/40 (MONTHLY_REBALANCE)
-#==============================================================================
-
-monthly_rebalance(np.array([0.6, 0.4, 0, 0, 0, 0, 0]))
