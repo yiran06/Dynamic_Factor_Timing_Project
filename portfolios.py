@@ -14,7 +14,6 @@ import imp
 imp.reload(DC)
 plt.style.use('ggplot')
 
-
 # notice that PE seems very out of place in terms of return
 data = DC.get_all_data()
 #data.drop(['PE'], axis=1, inplace=True)
@@ -25,8 +24,8 @@ def buy_and_hold(weights):
     portfolio = 1 * weights # initial dollar value 
     p_sum = []
     for i in range(len(data)):
-        portfolio = np.multiply(portfolio, 1 + data.ix[i]) # monthly return
-        portfolio = np.multiply(portfolio, 1 - holding_costs) # holding costs    
+        # monthly return less holding costs
+        portfolio = np.multiply(portfolio, 1 + data.ix[i] - holding_costs)     
         p_sum.append(np.sum(portfolio))
     p_ret = (pd.Series(p_sum).diff()/pd.Series(p_sum).shift(1))[1:]
         
@@ -39,11 +38,10 @@ def monthly_rebalance(weights):
     portfolio = 1 * weights # initial dollar value 
     p_sum = []
     for i in range(len(data)):
-        portfolio = np.multiply(portfolio, 1 + data.ix[i]) # monthly return
-        portfolio = np.multiply(portfolio, 1 - holding_costs) # holding costs
-        diff = np.abs(portfolio, weights * np.sum(portfolio))
-        portfolio = weights * np.sum(portfolio)
-        portfolio -= np.multiply(diff, trading_costs)
+        # monthly return less holding costs
+        portfolio = np.multiply(portfolio, 1 + data.ix[i] - holding_costs) 
+        diff = np.abs(portfolio - weights * np.sum(portfolio))
+        portfolio = weights * (np.sum(portfolio) - np.dot(diff, trading_costs))
         p_sum.append(np.sum(portfolio))
     p_ret = (pd.Series(p_sum).diff()/pd.Series(p_sum).shift(1))[1:]
         
