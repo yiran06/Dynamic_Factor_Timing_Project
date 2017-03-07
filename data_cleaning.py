@@ -64,7 +64,7 @@ def get_all_data():
     PE_data = pd.read_excel('./data/factor_timing_project_data_cleaned.xlsx', sheetname = 'PE')
     PE_data['EndDate'] = pd.to_datetime(PE_data['EndDate'])
     PE_data.index = PE_data['EndDate']
-    PE_data = PE_data['Monthly_Return']
+    PE_data = PE_data['Monthly_Return']/100
     PE_data.index = PE_data.index.map(lambda x:x.strftime('%Y-%m'))
     combined_df['PE'] = PE_data
     
