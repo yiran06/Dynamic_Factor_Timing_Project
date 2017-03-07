@@ -75,3 +75,15 @@ def get_all_data():
     
     combined_df = combined_df.ix[valid_rows]
     return combined_df
+
+## reference portfolio return    
+def reference_portfolio():
+    weights={'MSCI ACWI':0.50,'Barclays US agg':0.13,'HFRI FOF':0.10,'ML US HY Cash Pay':0.025,'Barclays TIP US Index':0.02, 'JPM EMBI':0.025,'PE':0.10}
+    #rescale weights    
+    tw= sum(weights.values())   
+    weights={k:v/tw for k,v in weights.items()}
+    weights_lst=[v for v in weights.values()]
+    pf=get_all_data()
+    rp=pf.apply(lambda x: sum(np.array(x)*weights_lst),axis=1)
+    return rp
+    
