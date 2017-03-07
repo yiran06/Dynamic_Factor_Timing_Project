@@ -8,7 +8,7 @@ Created on Mon Mar  6 17:19:33 2017
 import pandas as pd
 import matplotlib.pyplot as plt
 
-
+##need to change input root
 sheet_name=['MSCI ACWI','Barclays US Agg','HFRI FOF','Barclays TIP US Index','JPM EMBI','NCREIF']
 
 for sheet in sheet_name:
