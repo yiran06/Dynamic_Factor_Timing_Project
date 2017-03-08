@@ -15,9 +15,15 @@ imp.reload(DC)
 plt.style.use('ggplot')
 
 # notice that PE seems very out of place in terms of return
-data = DC.get_all_data()
+data = pd.read_csv('./data/asset_return.csv')
 #data.drop(['PE'], axis=1, inplace=True)
 col = data.columns
+data['Date']=pd.to_datetime(data['Date'])
+data.set_index(data['Date'],inplace=True)
+del data['Date']
+
+
+
 
 def buy_and_hold(weights):
     weights = weights * 1/np.sum(weights)    
@@ -73,11 +79,28 @@ def portfolio(data,weights):
     return p_ret
 
 
+
+
 def risk_parity(freq=12):
     weights=[list(data.iloc[range(0,12),:].apply(lambda x: np.std(x),axis=0))]
     for i in range(1,len(data)-12):
         weights=np.vstack((weights,list(data.iloc[range(i,i+12),:].apply(lambda x: np.std(x),axis=0))))
 
+
+
+
+
+def risk_parity2(freq=12):
+    alpha=0.94
+    exp_var=data
+    exp_ret=data
+    exp_w=np.array([(1-alpha)*alpha**i for i in range(data.shape[0]-1,-1,-1)])
+    for j in range(1,data.shape[0]):
+        w=exp_w[0:j]/sum(exp_w[0:j])
+        for i in range(data.shape[1]):
+            exp_ret.iloc[:,i]=data.iloc[:,i]*w
+            exp_var.iloc[:,i]=(data[:,i]-sum(exp_ret[:,i]))**2*w
+    weights=pd.DataFrame(weights)
     
 #==============================================================================
 # TRADING/HOLDING COSTS
