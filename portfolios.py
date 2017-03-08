@@ -63,8 +63,9 @@ def portfolio(data,weights):
         p1 = weight * (np.sum(p1) - np.dot(diff, trading_costs))
         p_sum.append(np.sum(p1))
         p0=p1
-    p_ret = (pd.Series(p_sum).diff()/pd.Series(p_sum).shift(1))[1:]  
-    p_ret =  pd.Series(p_sum).apply(np.log)-pd.Series(p_sum).apply(np.log).shift(1)
+    #p_ret = (pd.Series(p_sum).diff()/pd.Series(p_sum).shift(1))[1:]  
+    p_sum=pd.Series(p_sum)
+    p_ret =  np.log(p_sum)-np.log(p_sum).shift(1)
     p_ret=p_ret[1:]    
     plt.plot(pd.to_datetime(data.index), p_sum, label='Portfolio Value')
     #plt.plot(pd.to_datetime(data.index)[1:], p_ret, label='Monthly Return')
@@ -84,8 +85,8 @@ def risk_parity(freq=12):
 # please refer to page 5 of the project description
 # the following are estimates 
 
-trading_costs = np.array([0.0010, 0.0015, 0.010, 0.0030, 0.0000, 0.0045, 0.0100])
-holding_costs = np.array([0.0010, 0.0005, 0.000, 0.0015, 0.0000, 0.0025, 0.0000])/12
+trading_costs = np.array([0.0005, 0.0010, 0.0015, 0.0000, 0.0030, 0.0040, 0.0100,0.0100])
+holding_costs = np.array([0.0000, 0.0010, 0.0005, 0.0000, 0.0015, 0.0025, 0.0000,0.0000])/12
 
                          
 # 60/40 (BUY AND HOLD)
@@ -104,6 +105,10 @@ monthly_rebalance(np.array([1/7]*7))
 buy_and_hold(np.array([0.5, 0.13, 0.1, 0.025, 0.02, 0.025, 0.1]))
 # UCRP (MONTHLY_REBALANCE)
 monthly_rebalance(np.array([0.5, 0.13, 0.1, 0.025, 0.02, 0.025, 0.1]))
+
+
+
+
 
 
 
