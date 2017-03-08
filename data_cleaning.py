@@ -75,6 +75,32 @@ def get_all_data():
     
     combined_df = combined_df.ix[valid_rows]
     return combined_df
-
-
+   
+   
+   
+def get_all_data2():
+    file_name=['Equity_russel_3000','Equity_global_MSCI_ACWI',\
+    'Bond_US_Barclay_ETF','Bond_US_Barclay_TIPS','Bond_US_HighYield_bond_Index',\
+    'IYR','FOF_Fund of Fund']
+    df_arr = []
+    for file in file_name:
+        df = pd.read_excel('./data/asset/'+file+'.xlsx')
+        df_arr.append(to_monthly_return(df))
+    combined_df = pd.DataFrame(df_arr).T
+    combined_df.columns = file_name
     
+    # special treatment for PE
+    PE_data = pd.read_excel('./data/asset/UCRP PE.xlsx')
+    PE_data['EndDate'] = pd.to_datetime(PE_data['EndDate'])
+    PE_data.index = PE_data['EndDate']
+    PE_data = PE_data['Monthly_Return']/100
+    PE_data.index = PE_data.index.map(lambda x:x.strftime('%Y-%m'))
+    combined_df['PE'] = PE_data
+    
+    valid_rows = [True] * len(combined_df)
+    for i,col in enumerate(combined_df.columns):
+        valid_rows &= ~np.isnan(combined_df[col])
+    valid_rows
+    
+    combined_df = combined_df.ix[valid_rows]
+    return combined_df
