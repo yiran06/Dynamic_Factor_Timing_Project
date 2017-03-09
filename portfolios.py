@@ -24,7 +24,7 @@ data.set_index(data['Date'],inplace=True)
 del data['Date']
 
 
-def summary_stats(p_ret, p_cumret, b_ret):
+def summary_stats(p_ret, p_cumret, b_ret, rf_ret):
     # max drawdown
     x = p_cumret
     i = np.argmax(np.maximum.accumulate(x) - x) # end of the period
@@ -32,54 +32,19 @@ def summary_stats(p_ret, p_cumret, b_ret):
     plt.plot(x)
     plt.plot([i, j], [x[i], x[j]], 'o', color='Red', markersize=10)
     max_dd = x[j] - x[i]
-    max_dd_period = j-i
-    
+    max_dd_period = i-j
+    # SR
+    SR = np.mean(p_ret - rf_ret)/np.std(p_ret) * np.sqrt(12)
     # IR
     IR = np.mean(p_ret - b_ret)/np.std(p_ret - b_ret) * np.sqrt(12)
-    
     # cumulative return
     total_ret = (p_cumret[len(p_cumret)-1] - p_cumret[0])/p_cumret[0]
     # mean, std of return
     mean_ret = np.mean(p_ret)
     std_ret = np.std(p_ret)
-    return mean_ret, std_ret, total_ret, IR, max_dd, max_dd_period
-    
-
-def buy_and_hold(weights):
-    weights = weights * 1/np.sum(weights)    
-    portfolio = 1 * weights # initial dollar value 
-    p_sum = []
-    for i in range(len(data)):
-        # monthly return less holding costs
-        portfolio = np.multiply(portfolio, 1 + data.ix[i] - holding_costs)     
-        p_sum.append(np.sum(portfolio))
-    p_ret = (pd.Series(p_sum).diff()/pd.Series(p_sum).shift(1))[1:]
-        
-    plt.plot(pd.to_datetime(data.index), p_sum, label='Portfolio Value')
-    #plt.plot(pd.to_datetime(data.index)[1:], p_ret, label='Monthly Return')
-    plt.legend(loc='best')
-    plt.ylabel('Return')
-    plt.xlabel('Time')
-    return p_sum, p_ret
-
-def monthly_rebalance(weights):
-    weights = weights * 1/np.sum(weights)
-    portfolio = 1 * weights # initial dollar value 
-    p_sum = []
-    for i in range(len(data)):
-        # monthly return less holding costs
-        portfolio = np.multiply(portfolio, 1 + data.ix[i] - holding_costs) 
-        diff = np.abs(portfolio - weights * np.sum(portfolio))
-        portfolio = weights * (np.sum(portfolio) - np.dot(diff, trading_costs))
-        p_sum.append(np.sum(portfolio))
-    p_ret = (pd.Series(p_sum).diff()/pd.Series(p_sum).shift(1))[1:]
-        
-    plt.plot(pd.to_datetime(data.index), p_sum, label='Portfolio Value')
-    #plt.plot(pd.to_datetime(data.index)[1:], p_ret, label='Monthly Return')
-    plt.legend(loc='best')
-    plt.ylabel('Return')
-    plt.xlabel('Time')
-    return p_sum, p_ret
+    output = pd.DataFrame([mean_ret, std_ret, total_ret, SR, IR, max_dd, max_dd_period]).T
+    output.columns = ['mean_ret', 'std_ret', 'total_ret', 'SR','IR', 'max_dd', 'max_dd_period']
+    return output
 
 ###inputs: weights is a matrix, row: end of period date, col: asset weight
 ###inputs: data is a dataframe, row: end of period date, col: asset return 
@@ -89,21 +54,20 @@ def portfolio(data,weights,legend):
     for i in range(1,len(data)):
         # monthly return less holding costs
         weight = weights[i] * 1/np.sum(weights[i])
-        p1 = np.multiply(p0, 1 + data.ix[i] - holding_costs) 
+        p1 = p0 * np.exp(data.ix[i] - holding_costs)
         diff = np.abs(p1 - weight * np.sum(p1))
         p1 = weight * (np.sum(p1) - np.dot(diff, trading_costs))
         p_sum.append(np.sum(p1))
         p0=p1
     #p_ret = (pd.Series(p_sum).diff()/pd.Series(p_sum).shift(1))[1:]  
     p_sum=pd.Series(p_sum)
-    p_ret =  np.log(p_sum)-np.log(p_sum).shift(1)
+    #p_ret =  np.log(p_sum)-np.log(p_sum).shift(1)
+    p_ret = p_sum.diff()/p_sum.shift(1)
     p_ret=p_ret[1:]    
     plt.plot(pd.to_datetime(data.index), p_sum, label=legend)
     #plt.plot(pd.to_datetime(data.index)[1:], p_ret, label='Monthly Return')
     plt.legend(loc='best')
-    return p_ret
-
-
+    return np.array(p_ret), p_sum
 
 
 def risk_parity(freq=12):
@@ -111,7 +75,6 @@ def risk_parity(freq=12):
     for i in range(1,len(data)-12):
         weights=np.vstack((weights,list(data.iloc[range(i,i+12),:].apply(lambda x: 1/np.std(x),axis=0))))
     return weights
-
 
 
 
@@ -210,35 +173,18 @@ def mv_portfolio(data,legend,lbd):
 trading_costs = np.array([0.0005, 0.0010, 0.0015, 0.0000, 0.0030, 0.0040, 0.0100,0.0100])
 holding_costs = np.array([0.0000, 0.0010, 0.0005, 0.0000, 0.0015, 0.0025, 0.0000,0.0000])/12
 
-                         
-# 60/40 (BUY AND HOLD), split equally amoung equities and bonds
-buy_and_hold(np.array([0.6/2, 0.6/2, 0.4/3, 0.4/3, 0.4/3, 0, 0, 0]))
-# 60/40 (MONTHLY_REBALANCE)
-p_cumret_6040, p_ret_6040 = monthly_rebalance(np.array([0.6/2, 0.6/2, 0.4/3, 0.4/3, 0.4/3, 0, 0, 0]))
-plt.title('60/40 Portfolio')
 
-
-                         
-# EQUAL WEIGHTS PORTFOLIO (BUY AND HOLD)
-buy_and_hold(np.array([1/8]*8))
-# EQUAL WEIGHTS PORTFOLIO (MONTHLY_REBALANCE)
-p_cumret_eq, p_ret_eq = monthly_rebalance(np.array([1/8]*8))
-plt.title('Equally Weighted Portfolio')
-
-
-# UCRP (BUY AND HOLD)
-buy_and_hold(np.array([0.5, 0.13, 0.1, 0.025, 0.02, 0.025, 0.1]))
-# UCRP (MONTHLY_REBALANCE)
-monthly_rebalance(np.array([0.5, 0.13, 0.1, 0.025, 0.02, 0.025, 0.1]))
-
-
-# simple risk parity
-portfolio(data.iloc[12:,:],risk_parity(),'simple risk parity')
-# expoentially weighted risk parity
-portfolio(data.iloc[12:,:],risk_parity2(0.94),'ewm risk parity alpha=0.94')
-# expoentially weighted risk parity
-portfolio(data.iloc[12:,:],risk_parity2(0.8),'ewm risk parity alpha=0.8')
-
+plt.figure(figsize=(10,5))                         
+# UCRP
+p_ucrp, p_ucrp_sum = portfolio(data.iloc[12:,:],[[0.25,0.25,0.13,0.02,0.025,0.07,0.1,0.1]]*len(data),'UCRP')
+# 60/40
+p_6040, p_6040_sum = portfolio(data.iloc[12:,:],[[0.6/2, 0.6/2, 0.4/3, 0.4/3, 0.4/3, 0, 0, 0]]*len(data),'60/40')
+# Equally Weighted 
+p_eq, p_eq_sum = portfolio(data.iloc[12:,:],[[1/8]*8]*len(data),'equally weighted')
+# risk parity
+p_rp, p_rp_sum = portfolio(data.iloc[12:,:],risk_parity2(0.94),'ewm risk parity alpha=0.94')
+plt.title('Basic Portfolios')
+plt.ylabel('Return')
 
 fig=plt.figure()
 for i in range(data.shape[1]):
