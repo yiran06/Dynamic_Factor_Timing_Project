@@ -9,7 +9,6 @@ asset_file = 'data/asset_return.csv'
 factor_file = 'data/Monthly_Factors_Log_Returns_Aggregated.csv'
 
 
-
 asset_data = pd.read_csv(  asset_file, index_col= 0 )
 asset_data.index = pd.to_datetime( asset_data.index)
 asset_data.dropna(inplace=True)
@@ -59,32 +58,51 @@ def conduct_regression( data ):
     xs= sm.add_constant( data[ factor_class ] )
     
     coef_result =pd.DataFrame( columns= factor_class, index= asset_class )
+    t_stat = pd.DataFrame( columns= factor_class, index= asset_class )
     
     for y in asset_class:
         model = sm.OLS( data[ y], xs)
-        results = model.fit()
-        
+        results = model.fit()     
         coef_result.loc[ y, factor_class] = results.params
+        t_stat.loc[ y, factor_class] = results._results.tvalues[1:]
         
-    return coef_result
         
+    return coef_result,  t_stat
+        
+
+
+conduct_regression( merged_data )
 
 
 result = pd.DataFrame( columns= factor_class)
+t_stat = pd.DataFrame( columns= factor_class)
+
 
 
 for i in range(60,  len( merged_data.index)):
     
     data =  merged_data.loc[ merged_data.index[i-60:i], :    ]
     
-    coef =  conduct_regression(data)
+    coef, t_s =  conduct_regression(data)
     
     coef['date'] =  merged_data.index[i]
     coef.reset_index(inplace=True)
     
-    result.append( coef, ignore_index=True)
-    
-    
+    result =  result.append( coef, ignore_index=True)
+    t_stat =  t_stat.append( t_s, ignore_index=True)
+
+
+
+fac = [   u'Momentum', u'BXM Level (Volatility)', u'Mkt-RF', u'SMB', u'HML',
+        u'RF', u'Last_Price (High Yield Credit Spread)', u'PS_VWF (Liquidity)',
+        u'Credit Spread Investment Grade']
+
+ 
+fac = [   u'Momentum', u'BXM Level (Volatility)', u'Mkt-RF', u'SMB', u'HML',
+         u'Last_Price (High Yield Credit Spread)', u'PS_VWF (Liquidity)',
+        u'Credit Spread Investment Grade'] 
+
+result[   result['index'] == 'Equity_russel_3000'][fac].plot()
 
 
 
