@@ -124,7 +124,7 @@ def model1(r,c,lbd,p):
     r=np.array(r)
     n=len(r)
     x=Variable(n)
-    p=Problem(Maximize(r*x-lbd*(quad_form(x, c))-trading_costs*abs(np.sum(p)*x-p)),[x>=0,sum_entries(x)==1])
+    p=Problem(Maximize(r*x-lbd*(quad_form(x, c))-trading_costs*abs(np.sum(p)*x-p)-holding_costs*(np.sum(p)*x)),[x>=0,sum_entries(x)==1])
     p.solve()
     w=x.value
     return np.array(w)
@@ -194,7 +194,7 @@ plt.savefig('asset return',dpi=200)
 
 
 #mean variance
-p1,weights1=mv_portfolio(data,'mean_var 1000',1000)
+p1,weights1=mv_portfolio(data,'mean_var 100',100)
 p2,weights2=mv_portfolio(data,'mean_var 10',10)
 #plot weights
 for i in range(data.shape[1]):
