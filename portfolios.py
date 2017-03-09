@@ -24,7 +24,26 @@ data.set_index(data['Date'],inplace=True)
 del data['Date']
 
 
-
+def summary_stats(p_ret, p_cumret, b_ret):
+    # max drawdown
+    x = p_cumret
+    i = np.argmax(np.maximum.accumulate(x) - x) # end of the period
+    j = np.argmax(x[:i]) # start of period
+    plt.plot(x)
+    plt.plot([i, j], [x[i], x[j]], 'o', color='Red', markersize=10)
+    max_dd = x[j] - x[i]
+    max_dd_period = j-i
+    
+    # IR
+    IR = np.mean(p_ret - b_ret)/np.std(p_ret - b_ret) * np.sqrt(12)
+    
+    # cumulative return
+    total_ret = (p_cumret[len(p_cumret)-1] - p_cumret[0])/p_cumret[0]
+    # mean, std of return
+    mean_ret = np.mean(p_ret)
+    std_ret = np.std(p_ret)
+    return mean_ret, std_ret, total_ret, IR, max_dd, max_dd_period
+    
 
 def buy_and_hold(weights):
     weights = weights * 1/np.sum(weights)    
@@ -39,6 +58,9 @@ def buy_and_hold(weights):
     plt.plot(pd.to_datetime(data.index), p_sum, label='Portfolio Value')
     #plt.plot(pd.to_datetime(data.index)[1:], p_ret, label='Monthly Return')
     plt.legend(loc='best')
+    plt.ylabel('Return')
+    plt.xlabel('Time')
+    return p_sum, p_ret
 
 def monthly_rebalance(weights):
     weights = weights * 1/np.sum(weights)
@@ -55,7 +77,9 @@ def monthly_rebalance(weights):
     plt.plot(pd.to_datetime(data.index), p_sum, label='Portfolio Value')
     #plt.plot(pd.to_datetime(data.index)[1:], p_ret, label='Monthly Return')
     plt.legend(loc='best')
-
+    plt.ylabel('Return')
+    plt.xlabel('Time')
+    return p_sum, p_ret
 
 ###inputs: weights is a matrix, row: end of period date, col: asset weight
 ###inputs: data is a dataframe, row: end of period date, col: asset return 
@@ -207,16 +231,19 @@ trading_costs = np.array([0.0005, 0.0010, 0.0015, 0.0000, 0.0030, 0.0040, 0.0100
 holding_costs = np.array([0.0000, 0.0010, 0.0005, 0.0000, 0.0015, 0.0025, 0.0000,0.0000])/12
 
                          
-# 60/40 (BUY AND HOLD)
-buy_and_hold(np.array([0.6, 0.4, 0, 0, 0, 0, 0]))
+# 60/40 (BUY AND HOLD), split equally amoung equities and bonds
+buy_and_hold(np.array([0.6/2, 0.6/2, 0.4/3, 0.4/3, 0.4/3, 0, 0, 0]))
 # 60/40 (MONTHLY_REBALANCE)
-monthly_rebalance(np.array([0.6, 0.4, 0, 0, 0, 0, 0]))
+p_cumret_6040, p_ret_6040 = monthly_rebalance(np.array([0.6/2, 0.6/2, 0.4/3, 0.4/3, 0.4/3, 0, 0, 0]))
+plt.title('60/40 Portfolio')
+
 
                          
 # EQUAL WEIGHTS PORTFOLIO (BUY AND HOLD)
-buy_and_hold(np.array([1/7]*7))
+buy_and_hold(np.array([1/8]*8))
 # EQUAL WEIGHTS PORTFOLIO (MONTHLY_REBALANCE)
-monthly_rebalance(np.array([1/7]*7))
+p_cumret_eq, p_ret_eq = monthly_rebalance(np.array([1/8]*8))
+plt.title('Equally Weighted Portfolio')
 
 
 # UCRP (BUY AND HOLD)
