@@ -58,7 +58,7 @@ def monthly_rebalance(weights):
 
 ###inputs: weights is a matrix, row: end of period date, col: asset weight
 ###inputs: data is a dataframe, row: end of period date, col: asset return 
-def portfolio(data,weights):    
+def portfolio(data,weights,legend):    
     p0 = 1 * weights[0]/np.sum(weights[0]) # initial dollar value 
     p_sum = [1]
     for i in range(1,len(data)):
@@ -73,7 +73,7 @@ def portfolio(data,weights):
     p_sum=pd.Series(p_sum)
     p_ret =  np.log(p_sum)-np.log(p_sum).shift(1)
     p_ret=p_ret[1:]    
-    plt.plot(pd.to_datetime(data.index), p_sum, label='Portfolio Value')
+    plt.plot(pd.to_datetime(data.index), p_sum, label=legend)
     #plt.plot(pd.to_datetime(data.index)[1:], p_ret, label='Monthly Return')
     plt.legend(loc='best')
     return p_ret
@@ -82,25 +82,32 @@ def portfolio(data,weights):
 
 
 def risk_parity(freq=12):
-    weights=[list(data.iloc[range(0,12),:].apply(lambda x: np.std(x),axis=0))]
+    weights=[list(data.iloc[range(0,12),:].apply(lambda x: 1/np.std(x),axis=0))]
     for i in range(1,len(data)-12):
-        weights=np.vstack((weights,list(data.iloc[range(i,i+12),:].apply(lambda x: np.std(x),axis=0))))
+        weights=np.vstack((weights,list(data.iloc[range(i,i+12),:].apply(lambda x: 1/np.std(x),axis=0))))
+    return weights
 
 
 
 
-
-def risk_parity2(freq=12):
-    alpha=0.94
-    exp_var=data
-    exp_ret=data
-    exp_w=np.array([(1-alpha)*alpha**i for i in range(data.shape[0]-1,-1,-1)])
-    for j in range(1,data.shape[0]):
-        w=exp_w[0:j]/sum(exp_w[0:j])
-        for i in range(data.shape[1]):
-            exp_ret.iloc[:,i]=data.iloc[:,i]*w
-            exp_var.iloc[:,i]=(data[:,i]-sum(exp_ret[:,i]))**2*w
-    weights=pd.DataFrame(weights)
+def risk_parity2(alpha=0.8):
+    weights=[]
+    for j in range(data.shape[0]):
+        ## calculate exponential weights
+        exp_w=np.array([(1-alpha)*alpha**i for i in range(j,-1,-1)])
+        exp_w=exp_w/sum(exp_w)
+        exp_ret=np.array(data.iloc[0:(j+1),:])
+        w=[]        
+        for i in range(exp_ret.shape[1]):
+            ##calculate exponential weighted return            
+            exp_ret[:,i]=exp_ret[:,i]*exp_w
+            exp_var=sum((data.iloc[0:(j+1),i]-sum(exp_ret[:,i]))**2*exp_w)
+            w.append(1/np.sqrt(exp_var))
+        weights.append(w)
+    weights=np.array(weights)
+    weights = weights[12:,:]
+    return weights
+    
     
 #==============================================================================
 # TRADING/HOLDING COSTS
@@ -130,9 +137,12 @@ buy_and_hold(np.array([0.5, 0.13, 0.1, 0.025, 0.02, 0.025, 0.1]))
 monthly_rebalance(np.array([0.5, 0.13, 0.1, 0.025, 0.02, 0.025, 0.1]))
 
 
-
-
-
+# simple risk parity
+portfolio(data.iloc[12:,:],risk_parity(),'simple risk parity')
+# expoentially weighted risk parity
+portfolio(data.iloc[12:,:],risk_parity2(0.94),'ewm risk parity alpha=0.94')
+# expoentially weighted risk parity
+portfolio(data.iloc[12:,:],risk_parity2(0.8),'ewm risk parity alpha=0.8')
 
 
 
