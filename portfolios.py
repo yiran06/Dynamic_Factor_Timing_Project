@@ -118,7 +118,7 @@ def model1(r,c,lbd,p):
     r=np.array(r)
     n=len(r)
     x=Variable(n)
-    p=Problem(Maximize(r*x-lbd*(quad_form(x, c))-trading_costs*abs(np.sum(p)*x-p)),[x>=0,sum_entries(x)==1])
+    p=Problem(Maximize(r*x-lbd*(quad_form(x, c))-trading_costs*abs(np.sum(p)*x-p)-holding_costs*(np.sum(p)*x)),[x>=0,sum_entries(x)==1])
     p.solve()
     w=x.value
     return np.array(w)
@@ -197,6 +197,43 @@ if __name__ == "__main__":
     plt.title('Basic Portfolios')
     plt.ylabel('Return')
     
+<<<<<<< HEAD
+=======
+#==============================================================================
+# TRADING/HOLDING COSTS
+#==============================================================================
+# please refer to page 5 of the project description
+# the following are estimates 
+
+trading_costs = np.array([0.0005, 0.0010, 0.0015, 0.0000, 0.0030, 0.0040, 0.0100,0.0100])
+holding_costs = np.array([0.0000, 0.0010, 0.0005, 0.0000, 0.0015, 0.0025, 0.0000,0.0000])/12
+
+
+plt.figure(figsize=(10,5))                         
+# UCRP
+p_ucrp, p_ucrp_sum = portfolio(data.iloc[12:,:],[[0.25,0.25,0.13,0.02,0.025,0.07,0.1,0.1]]*len(data),'UCRP')
+# 60/40
+p_6040, p_6040_sum = portfolio(data.iloc[12:,:],[[0.6/2, 0.6/2, 0.4/3, 0.4/3, 0.4/3, 0, 0, 0]]*len(data),'60/40')
+# Equally Weighted 
+p_eq, p_eq_sum = portfolio(data.iloc[12:,:],[[1/8]*8]*len(data),'equally weighted')
+# risk parity
+p_rp, p_rp_sum = portfolio(data.iloc[12:,:],risk_parity2(0.94),'ewm risk parity alpha=0.94')
+plt.title('Basic Portfolios')
+plt.ylabel('Return')
+
+fig=plt.figure()
+for i in range(data.shape[1]):
+    plt.plot(np.cumprod(1+data.iloc[:,i]))
+plt.legend(data.columns,fontsize=5,loc=0)
+plt.savefig('asset return',dpi=200)
+
+
+#mean variance
+p1,weights1=mv_portfolio(data,'mean_var 100',100)
+p2,weights2=mv_portfolio(data,'mean_var 10',10)
+#plot weights
+for i in range(data.shape[1]):
+>>>>>>> 6c5f4e1613cc0bd9ee96332ef4ef0015e00710eb
     fig=plt.figure()
     for i in range(data.shape[1]):
         plt.plot(np.cumprod(1+data.iloc[:,i]))
