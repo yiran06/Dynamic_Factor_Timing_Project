@@ -152,7 +152,7 @@ def mv_portfolio(data,legend,lbd):
         w1=model1(alpha,cov,lbd,p0)
         w1=w1.reshape(len(w1))
         weights.append(w1)
-        p1 = np.multiply(p0, 1 + data.ix[i] - holding_costs)
+        p1 = p0 * np.exp(data.ix[i] - holding_costs)
         diff = np.abs(p1 - w1 * np.sum(p1))
         p1 = w1 * (np.sum(p1) - np.dot(diff, trading_costs))
         p_sum.append(np.sum(p1))
@@ -196,6 +196,7 @@ plt.savefig('asset return',dpi=200)
 #mean variance
 p1,weights1=mv_portfolio(data,'mean_var 1000',1000)
 p2,weights2=mv_portfolio(data,'mean_var 10',10)
+#plot weights
 for i in range(data.shape[1]):
     fig=plt.figure()
     plt.plot(weights1[:,i])
