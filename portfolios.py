@@ -252,3 +252,5 @@ if __name__ == "__main__":
             plt.legend([data.columns[i]])
             plt.show()
             fig.clear()
+
+portfolio(data.iloc[12:,:],[[1/8]*8]*len(data),'equally weighted')
