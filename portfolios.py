@@ -89,9 +89,98 @@ def risk_parity2(alpha=0.8):
     weights=np.array(weights)
     weights = weights[12:,:]
     return weights
+
+
+def mean_variance_model(asset_alpha, asset_cov, lam = 10):  
+    # cvxopt   
+    N_asset = asset_cov.shape[0]
+    P = matrix(np.array(asset_cov)) * lam
+    q = matrix(-np.array(asset_alpha))
+    G = matrix(-np.identity(N_asset))
+    h = matrix(np.zeros( (N_asset,1)))
+    A = matrix(1.0 + np.zeros((1,N_asset)))
+    b = matrix(1.0)
+
+    sol = solvers.qp(P, q, G, h, A, b)
+
+    df_sol = pd.Series(data = np.array(sol['x']).flatten(), index = asset_alpha.index)
+    return df_sol
+
+
+
+
+def model0(r,c,lbd):
+    r=np.array(r)
+    n=len(r)
+    x=Variable(n)
+    p=Problem(Maximize(r*x-lbd*(quad_form(x, c))))
+    p.solve()
+    return x.value
+
+def model1(r,c,lbd,w0):
+    r=np.array(r)
+    w0=np.array(w0)
+    n=len(r)
+    x=Variable(n)
+    p=Problem(Maximize(r*x-lbd*(quad_form(x, c))-trading_costs*(w0-x)))
+    p.solve()
+    return x.value
     
     
     
+def m_v(data,lbd):
+    weights=[]
+    for i in range(data.shape[0]-12):
+        if i==0:
+           alpha=data.iloc[i+11,:]
+           cov=np.cov(data.iloc[i:i+12,:].T) 
+           result=model0(alpha,cov,lbd)
+           weights.append(result)
+        alpha=data.iloc[i+11,:]
+        cov=np.cov(data.iloc[i:i+12,:].T)
+        #result=model1(alpha,cov,1000,weights[i-1])
+        result=model0(alpha,cov,lbd)
+        weights.append(np.array(result))
+    weights=np.array(weights)
+    weights=weights.reshape(data.shape[0]-11,data.shape[1])
+    return np.array(weights)
+    
+  
+    
+
+def mv_portfolio(data,legend):  
+    weights=[]
+    ##the first alpha and cov
+    alpha=data.iloc[11,:]
+    cov=np.cov(data.iloc[0:12,:].T) 
+    result=model0(alpha,cov,lbd)
+    weights.append(result)
+    p0 = 1 * weights[0]/np.sum(weights[0]) # initial dollar value 
+    p_sum = [1]
+    for i in range(1,len(data)-12):
+        alpha=data.iloc[i+11,:]
+        cov=np.cov(data.iloc[i:i+12,:].T)
+        weight=model1(alpha,cov,lbd,weights[0])
+        p1 = np.multiply(p0, 1 + data.ix[i] - holding_costs) 
+        diff = np.abs(p1 - weight * np.sum(p1))
+        p1 = weight * (np.sum(p1) - np.dot(diff, trading_costs))
+        p_sum.append(np.sum(p1))
+        p0=p1
+    #p_ret = (pd.Series(p_sum).diff()/pd.Series(p_sum).shift(1))[1:]  
+    p_sum=pd.Series(p_sum)
+    p_ret =  np.log(p_sum)-np.log(p_sum).shift(1)
+    p_ret=p_ret[1:]    
+    plt.plot(pd.to_datetime(data.index), p_sum, label=legend)
+    #plt.plot(pd.to_datetime(data.index)[1:], p_ret, label='Monthly Return')
+    plt.legend(loc='best')
+    return p_ret
+    
+#==============================================================================
+# TRADING/HOLDING COSTS
+#==============================================================================
+# please refer to page 5 of the project description
+# the following are estimates 
+
 
 
 ##mean variance without trading cost
@@ -161,6 +250,11 @@ def mv_portfolio(data,legend,lbd):
 
 
 
+fig=plt.figure()
+for i in range(data.shape[1]):
+    plt.plot(np.cumprod(1+data.iloc[:,i]))
+plt.legend(data.columns,fontsize=5,loc=0)
+plt.savefig('asset return',dpi=200)
 
 if __name__ == "__main__":
     
@@ -253,4 +347,12 @@ if __name__ == "__main__":
             plt.show()
             fig.clear()
 
+
 portfolio(data.iloc[12:,:],[[1/8]*8]*len(data),'equally weighted')
+
+#mean variance
+weight1=m_v(data,1000000)
+weight2=m_v(data,10)
+portfolio(data.iloc[11:,:],weight1,'naive mean variance lambda=10^6')
+portfolio(data.iloc[11:,:],weight2,'naive mean variance lambda=10')
+
